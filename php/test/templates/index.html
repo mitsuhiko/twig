@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+{% block title %}The Page Title{% endblock %}
+{% block body %}
+  <p>Hello World</p>
+  <ul>
+  {% for item in seq %}
+    <li>${item|escape}</li>
+  {% endfor %}
+  </ul>
+  <p>{% super %}</p>
+{% endblock %}
+
+<!-- this comment exists to workardound
+  our off-by-something error in the regex based lexer -->
