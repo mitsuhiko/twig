@@ -49,7 +49,7 @@ class Twig_Lexer
 		$this->cursor = 0;
 		$this->lineno = 1;
 		$this->pushedBack = array();
-		$this->end = strlen($code);
+		$this->end = strlen($this->code);
 		$this->position = self::POSITION_DATA;
 	}
 
