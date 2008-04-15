@@ -91,7 +91,14 @@ class Twig_BaseLoader
 			if (!file_exists($cache_fn) ||
 			    filemtime($cache_fn) < filemtime($fn)) {
 				twig_load_compiler();
-				$fp = fopen($cache_fn, 'wb');
+				$fp = @fopen($cache_fn, 'wb');
+				/* looks like we don't have access to this file.
+				   In that case we just load the code from memory */
+				if (!$fp) {
+					$code = $this->compileTemplate($name, NULL, $fn);
+					eval('?>' . $code);
+					return $cls;
+				}
 				$compiler = new Twig_FileCompiler($fp);
 				$this->compileTemplate($name, $compiler, $fn);
 				fclose($fp);
