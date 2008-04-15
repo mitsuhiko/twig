@@ -273,10 +273,18 @@ class Twig_BlockReference extends Twig_Node
 
 class Twig_Super extends Twig_Node
 {
+	public $block_name;
+
+	public function __construct($block_name, $lineno)
+	{
+		parent::__construct($lineno);
+		$this->block_name = $block_name;
+	}
+
 	public function compile($compiler)
 	{
 		$compiler->addDebugInfo($this);
-		$compiler->raw('twig_render_super_block($context);' . "\n");
+		$compiler->raw('parent::block_' . $this->block_name . '($context);' . "\n");
 	}
 }
 

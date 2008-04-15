@@ -132,14 +132,6 @@ function twig_make_array($object)
 	return array();
 }
 
-function twig_render_super_block($context)
-{
-	if (!(isset($context['::superblock']) &&
-	      is_callable($callback = $context['::superblock'])))
-		throw new Twig_RuntimeError('There is no parent block');
-	call_user_func($callback, $context);
-}
-
 function twig_date_format_filter($timestamp, $format='F j, Y, G:i')
 {
 	return date($format, $timestamp);
@@ -225,7 +217,7 @@ $twig_filters = array(
 	'urlencode' =>		'twig_urlencode_filter',
 
 	// string filters
-	'title' =>		'twig_title_string_filter';
+	'title' =>		'twig_title_string_filter',
 	'capitalize' =>		'twig_capitalize_string_filter',
 	'upper' =>		'strtoupper',
 	'lower' =>		'strtolower',

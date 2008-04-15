@@ -23,6 +23,7 @@ class Twig_Parser
 	public $stream;
 	public $blocks;
 	public $extends;
+	public $current_block;
 	private $handlers;
 
 	public function __construct($stream)
@@ -30,6 +31,7 @@ class Twig_Parser
 		$this->stream = $stream;
 		$this->extends = NULL;
 		$this->blocks = array();
+		$this->current_block = NULL;
 		$this->handlers = array(
 			'for' =>        array($this, 'parseForLoop'),
 			'if' =>         array($this, 'parseIfCondition'),
@@ -118,11 +120,13 @@ class Twig_Parser
 		if (isset($this->blocks[$name]))
 			throw new Twig_SyntaxError("block '$name' defined twice.",
 						   $lineno);
+		$this->current_block = $name;
 		$this->stream->expect(Twig_Token::BLOCK_END_TYPE);
 		$body = $this->subparse(array($this, 'decideBlockEnd'), true);
 		$this->stream->expect(Twig_Token::BLOCK_END_TYPE);
 		$block = new Twig_Block($name, $body, $lineno);
 		$this->blocks[$name] = $block;
+		$this->current_block = NULL;
 		return new Twig_BlockReference($name, $lineno);
 	}
 
@@ -143,8 +147,10 @@ class Twig_Parser
 
 	public function parseSuper($token)
 	{
+		if (is_null($this->current_block))
+			throw new Twig_SyntaxError('super outside block', $token->lineno);
 		$this->stream->expect(Twig_Token::BLOCK_END_TYPE);
-		return new Twig_Super($token->lineno);
+		return new Twig_Super($this->current_block, $token->lineno);
 	}
 
 	public function parseExpression()
