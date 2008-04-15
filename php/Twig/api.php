@@ -64,7 +64,7 @@ class Twig_BaseLoader
 {
 	public $cache;
 
-	public function __construct($cache)
+	public function __construct($cache=NULL)
 	{
 		$this->cache = $cache;
 	}
@@ -84,6 +84,10 @@ class Twig_BaseLoader
 	{
 		$cls = '__TwigTemplate_' . md5($name);
 		if (!class_exists($cls)) {
+			if (is_null($this->cache)) {
+				$this->evalTemplate($name);
+				return $cls;
+			}
 			$fn = $this->getFilename($name);
 			if (!file_exists($fn))
 				throw new Twig_TemplateNotFound($name);
@@ -92,11 +96,8 @@ class Twig_BaseLoader
 			    filemtime($cache_fn) < filemtime($fn)) {
 				twig_load_compiler();
 				$fp = @fopen($cache_fn, 'wb');
-				/* looks like we don't have access to this file.
-				   In that case we just load the code from memory */
 				if (!$fp) {
-					$code = $this->compileTemplate($name, NULL, $fn);
-					eval('?>' . $code);
+					$this->evalTemplate($name, $fn);
 					return $cls;
 				}
 				$compiler = new Twig_FileCompiler($fp);
@@ -108,7 +109,7 @@ class Twig_BaseLoader
 		return $cls;
 	}
 
-	public function compileTemplate($name, $compiler=null, $fn=null)
+	public function compileTemplate($name, $compiler=NULL, $fn=NULL)
 	{
 		twig_load_compiler();
 		if (is_null($compiler)) {
@@ -124,6 +125,12 @@ class Twig_BaseLoader
 		$node->compile($compiler);
 		if ($returnCode)
 			return $compiler->getCode();
+	}
+
+	private function evalTemplate($name, $fn=NULL)
+	{
+		$code = $this->compileTemplate($name, NULL, $fn);
+		eval('?>' . $code);
 	}
 }
 
