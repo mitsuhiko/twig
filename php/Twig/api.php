@@ -22,16 +22,36 @@ function twig_load_compiler()
 
 
 /**
+ * A helper function that can be used by filters to get the
+ * current active template.  This use useful to access variables
+ * on the template like the charset.
+ */
+function twig_get_current_template()
+{
+	return $GLOBALS['twig_current_template'];
+}
+
+
+/* the current template that is rendered.  This used used internally
+   and is an implementation detail.  Don't tamper with that. */
+$twig_current_template = NULL;
+
+
+/**
  * This class wraps a template instance as returned by the compiler and
  * is usually constructed from the `Twig_Loader`.
  */
 class Twig_Template
 {
 	private $instance;
+	public $charset;
+	public $loader;
 
-	public function __construct($instance)
+	public function __construct($instance, $charset=NULL, $loader)
 	{
 		$this->instance = $instance;
+		$this->charset = $charset;
+		$this->loader = $loader;
 	}
 
 	/**
@@ -50,9 +70,13 @@ class Twig_Template
 	 */
 	public function display($context=NULL)
 	{
+		global $twig_current_template;
+		$old = $twig_current_template;
+		$twig_current_template = $this;
 		if (is_null($context))
 			$context = array();
 		$this->instance->render($context);
+		$twig_current_template = $old;
 	}
 }
 
@@ -63,16 +87,18 @@ class Twig_Template
 class Twig_BaseLoader
 {
 	public $cache;
+	public $charset;
 
-	public function __construct($cache=NULL)
+	public function __construct($cache=NULL, $charset=NULL)
 	{
 		$this->cache = $cache;
+		$this->charset = $charset;
 	}
 
 	public function getTemplate($name)
 	{
 		$cls = $this->requireTemplate($name);
-		return new Twig_Template(new $cls);
+		return new Twig_Template(new $cls, $this->charset, $this);
 	}
 
 	public function getCacheFilename($name)

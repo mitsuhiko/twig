@@ -10,6 +10,45 @@
  */
 
 
+$twig_filters = array(
+	// formatting filters
+	'date' =>		'twig_date_format_filter',
+	'numberformat' =>	'number_format',
+	'moneyformat' =>	'money_format',
+	'filesizeformat' =>	'twig_filesize_format_filter',
+	'format' =>		'sprintf',
+
+	// numbers
+	'even' =>		'twig_is_even_filter',
+	'odd' =>		'twig_is_odd_filter',
+
+	// escaping and encoding
+	'escape' =>		'htmlspecialchars',
+	'e' =>			'htmlspecialchars',
+	'urlencode' =>		'twig_urlencode_filter',
+
+	// string filters
+	'title' =>		'twig_title_string_filter',
+	'capitalize' =>		'twig_capitalize_string_filter',
+	'upper' =>		'strtoupper',
+	'lower' =>		'strtolower',
+	'strip' =>		'trim',
+	'rstrip' =>		'rtrim',
+	'lstrip' =>		'ltrim',
+
+	// array helpers
+	'join' =>		'twig_join_filter',
+	'reverse' =>		'array_reverse',
+	'length' =>		'count',
+	'count' =>		'count',
+
+	// iteration and runtime
+	'default' =>		'twig_default_filter',
+	'keys' =>		'array_keys',
+	'items' =>		'twig_get_array_items_filter'
+);
+
+
 class Twig_LoopContextIterator implements Iterator
 {
 	public $context;
@@ -137,16 +176,6 @@ function twig_date_format_filter($timestamp, $format='F j, Y, G:i')
 	return date($format, $timestamp);
 }
 
-function twig_capitalize_string_filter($string)
-{
-	return ucfirst(strtolower($string));
-}
-
-function twig_title_string_filter($string)
-{
-	return ucwords(strtolower($string));
-}
-
 function twig_urlencode_filter($string, $raw=false)
 {
 	if ($raw)
@@ -199,40 +228,55 @@ function twig_is_odd_filter($value)
 }
 
 
-$twig_filters = array(
-	// formatting filters
-	'date' =>		'twig_date_format_filter',
-	'numberformat' =>	'number_format',
-	'moneyformat' =>	'money_format',
-	'filesizeformat' =>	'twig_filesize_format_filter',
-	'format' =>		'sprintf',
+// add multibyte extensions if possible
+if (function_exists('mb_get_info')) {
+	function twig_upper_filter($string)
+	{
+		$template = twig_get_current_template();
+		if (!is_null($template->charset))
+			return mb_strtoupper($string, $template->charset);
+		return strtoupper($string);
+	}
 
-	// numbers
-	'even' =>		'twig_is_even_filter',
-	'odd' =>		'twig_is_odd_filter',
+	function twig_lower_filter($string)
+	{
+		$template = twig_get_current_template();
+		if (!is_null($template->charset))
+			return mb_strtolower($string, $template->charset);
+		return strtolower($string);
+	}
 
-	// escaping and encoding
-	'escape' =>		'htmlspecialchars',
-	'e' =>			'htmlspecialchars',
-	'urlencode' =>		'twig_urlencode_filter',
+	function twig_title_string_filter($string)
+	{
+		$template = twig_get_current_template();
+		if (is_null($template->charset))
+			return ucwords(strtolower($string));
+		return mb_convert_case($string, MB_CASE_TITLE, $template->charset);
+	}
 
-	// string filters
-	'title' =>		'twig_title_string_filter',
-	'capitalize' =>		'twig_capitalize_string_filter',
-	'upper' =>		'strtoupper',
-	'lower' =>		'strtolower',
-	'strip' =>		'trim',
-	'rstrip' =>		'rtrim',
-	'lstrip' =>		'ltrim',
+	function twig_capitalize_string_filter($string)
+	{
+		$template = twig_get_current_template();
+		if (is_null($template->charset))
+			return ucfirst(strtolower($string));
+		return mb_strtoupper(mb_substr($string, 0, 1, $template->charset)) .
+		       mb_strtolower(mb_substr($string, 1, null, $template->charset));
+	}
 
-	// array helpers
-	'join' =>		'twig_join_filter',
-	'reverse' =>		'array_reverse',
-	'length' =>		'count',
-	'count' =>		'count',
+	// override the builtins
+	$twig_filters['upper'] = 'twig_upper_filter';
+	$twig_filters['lower'] = 'twig_lower_filter';
+}
 
-	// iteration and runtime
-	'default' =>		'twig_default_filter',
-	'keys' =>		'array_keys',
-	'items' =>		'twig_get_array_items_filter'
-);
+// and byte fallback
+else {
+	function twig_title_string_filter($string)
+	{
+		return ucwords(strtolower($string));
+	}
+
+	function twig_capitalize_string_filter($string)
+	{
+		return ucfirst(strtolower($string));
+	}
+}
