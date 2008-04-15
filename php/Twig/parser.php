@@ -36,6 +36,7 @@ class Twig_Parser
 			'for' =>        array($this, 'parseForLoop'),
 			'if' =>         array($this, 'parseIfCondition'),
 			'extends' =>	array($this, 'parseExtends'),
+			'include' =>	array($this, 'parseInclude'),
 			'block' =>	array($this, 'parseBlock'),
 			'super' =>	array($this, 'parseSuper')
 		);
@@ -143,6 +144,13 @@ class Twig_Parser
 		$this->extends = $this->stream->expect(Twig_Token::STRING_TYPE)->value;
 		$this->stream->expect(Twig_Token::BLOCK_END_TYPE);
 		return NULL;
+	}
+
+	public function parseInclude($token)
+	{
+		$expr = $this->parseExpression();
+		$this->stream->expect(Twig_Token::BLOCK_END_TYPE);
+		return new Twig_Include($expr, $token->lineno);
 	}
 
 	public function parseSuper($token)

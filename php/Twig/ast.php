@@ -289,6 +289,26 @@ class Twig_Super extends Twig_Node
 }
 
 
+class Twig_Include extends Twig_Node
+{
+	public $expr;
+
+	public function __construct($expr, $lineno)
+	{
+		parent::__construct($lineno);
+		$this->expr = $expr;
+	}
+
+	public function compile($compiler)
+	{
+		$compiler->addDebugInfo($this);
+		$compiler->raw('twig_get_current_template()->loader->getTemplate(');
+		$this->expr->compile($compiler);
+		$compiler->raw(')->display($context);' . "\n");
+	}
+}
+
+
 class Twig_Expression extends Twig_Node
 {
 
